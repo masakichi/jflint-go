@@ -46,6 +46,7 @@ type BasicAuth struct {
 }
 
 var cfgFile string
+var httpClient *http.Client
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -74,30 +75,28 @@ as curl approach and displays the result.`,
 		jenkinsCrumbUrl := jenkinsUrl + "/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,\":\",//crumb)"
 		jenkinsValidateUrl := jenkinsUrl + "/pipeline-model-converter/validate"
 
-		client := &http.Client{}
-
 		crumbHeader := CrumbHeader{}
 		csrfDisabled := viper.GetBool("csrfDisabled")
 		if !csrfDisabled {
-			crumbHeader, err = fetchCrumbHeader(client, "GET", basicAuth, jenkinsCrumbUrl)
+			crumbHeader, err = fetchCrumbHeader(basicAuth, jenkinsCrumbUrl)
 			if err != nil {
 				log.Fatal(err)
 			}
 		}
-		result := validate(client, "POST", basicAuth, jenkinsValidateUrl, jenkinsFile, crumbHeader)
+		result := validate(basicAuth, jenkinsValidateUrl, jenkinsFile, crumbHeader)
 		fmt.Println(result)
 	},
 }
 
-func fetchCrumbHeader(client *http.Client, method string, basicAuth BasicAuth, jenkinsCrumbUrl string) (CrumbHeader, error) {
-	req, err := http.NewRequest(method, jenkinsCrumbUrl, nil)
+func fetchCrumbHeader(basicAuth BasicAuth, jenkinsCrumbUrl string) (CrumbHeader, error) {
+	req, err := http.NewRequest("GET", jenkinsCrumbUrl, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
 	if (basicAuth != BasicAuth{}) {
 		req.SetBasicAuth(basicAuth.Username, basicAuth.Password)
 	}
-	resp, err := client.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -115,13 +114,13 @@ func fetchCrumbHeader(client *http.Client, method string, basicAuth BasicAuth, j
 	return CrumbHeader{crumbSlice[0], crumbSlice[1]}, nil
 }
 
-func validate(client *http.Client, method string, basicAuth BasicAuth, jenkinsValidateUrl string, jenkinsFile string, crumbHeader CrumbHeader) string {
+func validate(basicAuth BasicAuth, jenkinsValidateUrl string, jenkinsFile string, crumbHeader CrumbHeader) string {
 	data := url.Values{
 		"jenkinsfile": []string{jenkinsFile},
 	}
 	reqBody := strings.NewReader(data.Encode())
 
-	req, err := http.NewRequest(method, jenkinsValidateUrl, reqBody)
+	req, err := http.NewRequest("POST", jenkinsValidateUrl, reqBody)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -132,7 +131,7 @@ func validate(client *http.Client, method string, basicAuth BasicAuth, jenkinsVa
 	if (basicAuth != BasicAuth{}) {
 		req.SetBasicAuth(basicAuth.Username, basicAuth.Password)
 	}
-	resp, err := client.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -170,6 +169,8 @@ func init() {
 	viper.BindPFlag("password", rootCmd.Flags().Lookup("password"))
 	viper.BindPFlag("jenkinsUrl", rootCmd.Flags().Lookup("jenkins-url"))
 	viper.BindPFlag("csrfDisabled", rootCmd.Flags().Lookup("csrf-disabled"))
+
+	httpClient = &http.Client{}
 }
 
 // initConfig reads in config file and ENV variables if set.
