@@ -58,6 +58,11 @@ but sends a request to Jenkins in the same way
 as curl approach and displays the result.`,
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
+		jenkinsUrl := viper.GetString("jenkinsUrl")
+		if jenkinsUrl == "" {
+			log.Fatal("Error: jenkins URL must be specified")
+		}
+
 		basicAuth := BasicAuth{viper.GetString("username"), viper.GetString("password")}
 		// Read Jenkinsfile content
 		data, err := os.ReadFile(args[0])
@@ -66,7 +71,6 @@ as curl approach and displays the result.`,
 		}
 		jenkinsFile := string(data)
 
-		jenkinsUrl := viper.GetString("jenkinsUrl")
 		jenkinsCrumbUrl := jenkinsUrl + "/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,\":\",//crumb)"
 		jenkinsValidateUrl := jenkinsUrl + "/pipeline-model-converter/validate"
 
@@ -184,6 +188,8 @@ func initConfig() {
 		viper.SetConfigName(".jflintrc")
 	}
 
+	// env variable should start with JFLINTGO, eg: JFLINTGO_USERNAME
+	viper.SetEnvPrefix("jflintgo")
 	viper.AutomaticEnv() // read in environment variables that match
 
 	// If a config file is found, read it in.
