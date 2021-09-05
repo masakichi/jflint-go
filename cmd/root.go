@@ -106,7 +106,7 @@ func fetchCrumbHeader(basicAuth BasicAuth, jenkinsCrumbUrl string) (CrumbHeader,
 		log.Fatal(err)
 	}
 
-	crumbString := string(body)
+	crumbString := strings.TrimSpace(string(body))
 	crumbSlice := strings.Split(crumbString, ":")
 	if len(crumbSlice) != 2 {
 		return CrumbHeader{}, errors.New("failed parse jenkins crumb header")
