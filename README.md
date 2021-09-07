@@ -6,6 +6,12 @@ This project is highly inspired by its original implemention [jflint](https://gi
 
 ## Installation
 
+If you use Homebrew you can:
+
+```bash
+brew install masakichi/tap/jflint-go
+```
+
 For Go 1.16+
 
 ```bash
@@ -24,7 +30,7 @@ GO111MODULE=on go get github.com/masakichi/jflint-go
 
 default location is `$HOME/.jflintrc`
 
-```
+```json
 {
   "jenkinsUrl": "http://jenkins.example.com",
   "username": "admin",
@@ -34,13 +40,13 @@ default location is `$HOME/.jflintrc`
 
 ### Example
 
-```
+```bash
 $ jflint-go deploy-xxx.Jenkinsfile
 ```
 
 ### Full usage
 
-```bash
+```
 $ jflint-go -h
 jflint-go helps to lint a Declarative Jenkinsfile.
 
